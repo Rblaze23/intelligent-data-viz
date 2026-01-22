@@ -14,7 +14,7 @@ An intelligent web application that generates automated data visualizations base
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-team/intelligent-data-viz.git
+   git clone https://github.com/Rblaze23/intelligent-data-viz.git
    cd intelligent-data-viz
    ```
 

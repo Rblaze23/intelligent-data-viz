@@ -5,25 +5,25 @@ from typing import Dict
 
 class PromptTemplates:
     """Collection of prompt templates for visualization tasks."""
-    
+
     @staticmethod
     def analyze_problem_and_data(
-        problem: str,
-        column_info: Dict[str, str],
-        sample_data: str
+        problem: str, column_info: Dict[str, str], sample_data: str
     ) -> str:
         """Generate prompt for analyzing problem and recommending visualizations.
-        
+
         Args:
             problem: User's problem statement
             column_info: Dictionary of column names to data types
             sample_data: Sample rows from the dataset
-            
+
         Returns:
             Formatted prompt for the LLM
         """
-        columns_str = "\n".join([f"- {col}: {dtype}" for col, dtype in column_info.items()])
-        
+        columns_str = "\n".join(
+            [f"- {col}: {dtype}" for col, dtype in column_info.items()]
+        )
+
         return f"""You are an expert data visualization consultant. Analyze the problem and recommend visualizations.
 
 **User's Problem:**

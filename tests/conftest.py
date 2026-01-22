@@ -3,15 +3,17 @@ import pandas as pd
 import tempfile
 import os
 
+
 @pytest.fixture
 def sample_csv_data():
     """Sample CSV data for testing."""
     data = {
         "x": [1, 2, 3, 4, 5],
         "y": [10, 20, 30, 40, 50],
-        "category": ["A", "B", "A", "B", "A"]
+        "category": ["A", "B", "A", "B", "A"],
     }
     return pd.DataFrame(data)
+
 
 @pytest.fixture
 def temp_csv_file(sample_csv_data):
@@ -21,6 +23,7 @@ def temp_csv_file(sample_csv_data):
         temp_path = f.name
     yield temp_path
     os.unlink(temp_path)
+
 
 @pytest.fixture
 def mock_groq_response():
@@ -34,3 +37,25 @@ def mock_groq_response():
             }
         ]
     }
+
+
+@pytest.fixture
+def edge_case_csv_data():
+    """Edge case CSV data with missing values and outliers."""
+    data = {
+        "x": [1, None, 3, 1000, 5],  # Missing value and outlier
+        "y": [10, 20, None, 40, 50],  # Missing value
+        "category": ["A", "B", "", "B", "A"],  # Empty string
+    }
+    return pd.DataFrame(data)
+
+
+@pytest.fixture
+def error_case_csv_data():
+    """Error case CSV data with invalid structure."""
+    data = {
+        "col1": ["text", "text", "text"],
+        "col2": ["text", "text", "text"],
+        # All text columns, no numeric data
+    }
+    return pd.DataFrame(data)
