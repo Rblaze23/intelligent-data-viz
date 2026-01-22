@@ -66,9 +66,9 @@ Deployed on Hugging Face Spaces: [Link here]
 
 ## Team
 
-- Person 1: LLM & Data Processing
-- Person 2: Visualization & Frontend
-- Person 3: Infrastructure & Quality
+- Chiheb Guesmi: LLM & Data Processing
+- Ramy Lazgheb: Visualization & Frontend
+- Mohamed Yassine Madhi: Infrastructure & Quality
 
 ## License
 
