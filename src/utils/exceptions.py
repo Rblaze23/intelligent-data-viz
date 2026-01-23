@@ -46,6 +46,12 @@ class APIError(IntelligentDataVizError):
     pass
 
 
+class VLMError(IntelligentDataVizError):
+    """Error in VLM (Vision Language Model) operations."""
+
+    pass
+
+
 def error_to_user_message(error: Exception) -> str:
     """Convert exception to user-friendly message."""
     if isinstance(error, LLMError):
