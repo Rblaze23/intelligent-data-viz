@@ -1,44 +1,72 @@
+# -*- coding: utf-8 -*-
 """
-UI Components Module - Reusable Streamlit components
+UI Components Module - Professional Streamlit components
 """
 
 import streamlit as st
 from typing import Any, List, Dict, Optional, Callable
 import plotly.graph_objects as go
+import pandas as pd
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
+# Professional color palette
+COLORS = {
+    'primary': '#0066cc',
+    'success': '#28a745',
+    'warning': '#ffc107',
+    'danger': '#dc3545',
+    'info': '#17a2b8',
+    'secondary': '#6c757d',
+    'accent': '#ff6b6b',
+    'light': '#f8f9fa',
+    'dark': '#1a1a1a'
+}
+
 
 class UIComponents:
-    """Collection of reusable UI components."""
+    """Collection of professional reusable UI components."""
 
     @staticmethod
-    def data_preview(df, title: str = "Data Preview", max_rows: int = 5):
-        """Display data preview."""
-        with st.expander(title):
-            col1, col2 = st.columns(2)
+    def data_preview(df, title: str = "📊 Data Preview", max_rows: int = 5):
+        """Display professional data preview."""
+        with st.expander(title, expanded=False):
+            col1, col2, col3 = st.columns(3)
             with col1:
-                st.metric("Rows", len(df))
+                st.metric("📈 Total Rows", f"{len(df):,}")
             with col2:
-                st.metric("Columns", len(df.columns))
+                st.metric("📋 Columns", len(df.columns))
+            with col3:
+                st.metric("💾 Memory", f"{df.memory_usage(deep=True).sum() / 1024:.1f} KB")
             
-            st.dataframe(df.head(max_rows), use_container_width=True)
+            st.dataframe(df.head(max_rows), use_container_width=True, hide_index=True)
             
-            with st.expander("Column Info"):
-                for col in df.columns:
-                    st.write(f"**{col}**: {df[col].dtype}")
+            with st.expander("📝 Column Information"):
+                col_info = pd.DataFrame({
+                    'Column': df.columns,
+                    'Type': [str(t) for t in df.dtypes],
+                    'Missing': [df[col].isna().sum() for col in df.columns],
+                    'Unique': [df[col].nunique() for col in df.columns]
+                })
+                st.dataframe(col_info, use_container_width=True, hide_index=True)
 
     @staticmethod
     def problem_statement_input() -> str:
-        """Input component for problem statement."""
-        st.subheader("📋 Define Your Problem")
+        """Professional input component for problem statement."""
+        st.subheader("📋 Define Your Analysis Problem")
+        st.write("Provide a clear description of what you want to analyze or visualize.")
+        
         problem = st.text_area(
-            "What do you want to visualize?",
-            placeholder="e.g., 'Show me the relationship between house prices and square meters'",
+            "Analysis Objective:",
+            placeholder="Example: Analyze the correlation between product features and sales performance...",
             height=100,
-            help="Be specific about what insights you're looking for"
+            help="Be specific about the insights you're seeking. This helps generate better visualizations."
         )
+        
+        if problem:
+            st.success(f"✅ Objective: {problem[:50]}...")
+        
         return problem
 
     @staticmethod
@@ -89,18 +117,33 @@ class UIComponents:
 
     @staticmethod
     def error_message(message: str, title: str = "❌ Error"):
-        """Display error message."""
-        st.error(f"**{title}**\n{message}")
+        """Display professional error message."""
+        with st.container():
+            col1, col2 = st.columns([0.1, 0.9])
+            with col1:
+                st.write("❌")
+            with col2:
+                st.error(f"**{title}**\n{message}")
 
     @staticmethod
     def success_message(message: str, title: str = "✅ Success"):
-        """Display success message."""
-        st.success(f"**{title}**\n{message}")
+        """Display professional success message."""
+        with st.container():
+            col1, col2 = st.columns([0.1, 0.9])
+            with col1:
+                st.write("✅")
+            with col2:
+                st.success(f"**{title}**\n{message}")
 
     @staticmethod
     def info_message(message: str, title: str = "ℹ️ Info"):
-        """Display info message."""
-        st.info(f"**{title}**\n{message}")
+        """Display professional info message."""
+        with st.container():
+            col1, col2 = st.columns([0.1, 0.9])
+            with col1:
+                st.write("ℹ️")
+            with col2:
+                st.info(f"**{title}**\n{message}")
 
     @staticmethod
     def visualization_stats(fig: go.Figure, data_points: int):
@@ -148,9 +191,10 @@ class UIComponents:
 
     @staticmethod
     def enhancement_report(analysis: Dict[str, Any]):
-        """Display VLM enhancement analysis."""
-        st.subheader("✨ VLM Enhancement Analysis")
+        """Display comprehensive VLM enhancement analysis corpus."""
+        st.subheader("✨ Comprehensive VLM Enhancement Analysis")
         
+        # Scores
         col1, col2 = st.columns(2)
         
         with col1:
@@ -161,23 +205,56 @@ class UIComponents:
             effectiveness = analysis.get('effectiveness_score', 75)
             st.metric("Effectiveness Score", f"{effectiveness}/100", delta=effectiveness - 75)
         
-        # Insights
-        with st.expander("🔍 VLM Insights"):
+        # Design Insights - Comprehensive Corpus
+        with st.expander("🔍 Design Insights & Analysis", expanded=True):
             insights = analysis.get('insights', [])
             if isinstance(insights, list):
-                for insight in insights:
-                    st.write(f"• {insight}")
+                st.write("**Key Findings from Visualization:**")
+                for i, insight in enumerate(insights, 1):
+                    st.write(f"**{i}.** {insight}")
             else:
                 st.write(insights)
         
         # Improvements
-        with st.expander("💡 Recommended Improvements"):
+        with st.expander("💡 Specific Improvements"):
             improvements = analysis.get('improvements', [])
             if isinstance(improvements, list):
                 for i, improvement in enumerate(improvements, 1):
-                    st.write(f"{i}. {improvement}")
+                    st.write(f"**{i}.** {improvement}")
             else:
                 st.write(improvements)
+        
+        # Comparative Analysis
+        with st.expander("📊 Comparative Analysis"):
+            comparative = analysis.get('comparative_analysis', 'Not available')
+            if isinstance(comparative, dict):
+                st.write(f"**Industry Standards:** {comparative.get('industry_standards', 'N/A')}")
+                st.write(f"**Effectiveness:** {comparative.get('effectiveness', 'N/A')}")
+                st.write(f"**Alternatives:** {comparative.get('alternatives', 'N/A')}")
+            else:
+                st.write(comparative)
+        
+        # Actionable Recommendations
+        with st.expander("🎯 Actionable Recommendations"):
+            actions = analysis.get('actionable_recommendations', 'Not available')
+            if isinstance(actions, dict):
+                st.write(f"**Decision Actions:** {actions.get('decision_actions', 'N/A')}")
+                st.write(f"**Follow-up Analysis:** {actions.get('follow_up', 'N/A')}")
+                st.write(f"**Missing Data:** {actions.get('missing_data', 'N/A')}")
+            else:
+                st.write(actions)
+        
+        # Enhancement Recommendations
+        with st.expander("🎨 Visual Enhancement Recommendations"):
+            enhancements = analysis.get('enhancement_recommendations', {})
+            if isinstance(enhancements, dict):
+                st.write(f"**Color Scheme:** {enhancements.get('color_scheme', 'Default')}")
+                st.write(f"**Annotations:** {enhancements.get('annotations', 'None')}")
+                st.write(f"**Supporting Charts:** {enhancements.get('supporting_charts', 'None')}")
+                st.write(f"**Interactivity:** {enhancements.get('interactivity', 'None')}")
+                st.write(f"**Storytelling:** {enhancements.get('storytelling', 'N/A')}")
+            else:
+                st.write(enhancements)
         
         # Enhancement recommendations
         with st.expander("🎯 Enhancement Recommendations"):
@@ -189,34 +266,50 @@ class UIComponents:
 
     @staticmethod
     def sidebar_info():
-        """Display sidebar information."""
+        """Display professional sidebar information."""
         with st.sidebar:
             st.markdown("---")
-            st.markdown("## ℹ️ About")
-            st.markdown("""
-This application uses:
-- **LLM**: For analyzing data and recommending visualizations
-- **VLM**: For enhancing visualizations to next level
-- **Plotly**: For interactive visualizations
-- **Grok API**: For vision-language model capabilities
+            st.markdown("### 🎯 Features")
+            features = [
+                "📊 AI-Powered Visualization",
+                "🔍 Intelligent Data Analysis",
+                "📈 Professional Dashboards",
+                "💾 Multi-Format Export",
+                "⚡ High Performance"
+            ]
+            for feature in features:
+                st.write(f"✓ {feature}")
+            
+            st.markdown("---")
+            st.markdown("### 🔧 Technology Stack")
+            st.write("""
+- **LLM**: Groq (llama-3.3-70b-versatile)
+- **VLM**: Groq (llama-4-scout)
+- **Visualization**: Plotly
+- **Framework**: Streamlit
 """)
             
             st.markdown("---")
-            st.markdown("## 📚 Tips")
-            st.markdown("""
-1. Be specific in your problem statement
-2. Review all 3 visualization options
-3. Check the VLM enhancement analysis
-4. Export your final visualization
-""")
+            st.markdown("### 💡 Quick Tips")
+            tips = [
+                "Be specific in problem statements",
+                "Review all visualization options",
+                "Use dashboard for comprehensive view",
+                "Export in multiple formats"
+            ]
+            for i, tip in enumerate(tips, 1):
+                st.write(f"{i}. {tip}")
+            
+            st.markdown("---")
+            st.markdown("### 📞 Support")
+            st.write("For issues or feedback, please contact support.")
 
     @staticmethod
     def footer():
-        """Display footer."""
+        """Display professional footer."""
         st.markdown("---")
         st.markdown("""
         <div style='text-align: center'>
-            <p>Made with ❤️ by Person 2 - Data Visualization Lead</p>
-            <p>Powered by Streamlit, Plotly, and Grok Vision API</p>
+            <p>Powered by Streamlit, Plotly, and Groq Vision API</p>
         </div>
         """, unsafe_allow_html=True)
