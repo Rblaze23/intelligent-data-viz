@@ -1,3 +1,15 @@
+---
+title: Intelligent Data Viz
+emoji: 📊
+colorFrom: blue
+colorTo: purple
+sdk: streamlit
+sdk_version: 1.30.0
+app_file: app.py
+pinned: false
+license: mit
+---
+
 # Intelligent Data Visualization
 
 An intelligent web application that generates automated data visualizations based on user problems and datasets using Groq AI.
@@ -166,5 +178,5 @@ MIT License - See LICENSE file for details
 
 ---
 
-**Master 2 BDIA - Data Visualization Project**  
+**Master 2 BDIA - Data Visualization Project**
 **Deadline**: February 7, 2026
