@@ -20,12 +20,14 @@ class LLMClient:
                    - llama-3.1-70b-versatile
                    - mixtral-8x7b-32768
         """
+        self.initialized = False
         api_key = os.getenv("GROQ_API_KEY")
         if not api_key:
             raise ValueError("GROQ_API_KEY not found in environment variables")
 
         self.client = Groq(api_key=api_key)
         self.model = model
+        self.initialized = True
 
     def generate_completion(
         self, 
