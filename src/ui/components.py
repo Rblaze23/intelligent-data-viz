@@ -42,14 +42,15 @@ class UIComponents:
             
             st.dataframe(df.head(max_rows), use_container_width=True, hide_index=True)
             
-            with st.expander("📝 Column Information"):
-                col_info = pd.DataFrame({
-                    'Column': df.columns,
-                    'Type': [str(t) for t in df.dtypes],
-                    'Missing': [df[col].isna().sum() for col in df.columns],
-                    'Unique': [df[col].nunique() for col in df.columns]
-                })
-                st.dataframe(col_info, use_container_width=True, hide_index=True)
+            # Column Information (outside nested expander)
+            st.markdown("#### 📝 Column Information")
+            col_info = pd.DataFrame({
+                'Column': df.columns,
+                'Type': [str(t) for t in df.dtypes],
+                'Missing': [df[col].isna().sum() for col in df.columns],
+                'Unique': [df[col].nunique() for col in df.columns]
+            })
+            st.dataframe(col_info, use_container_width=True, hide_index=True)
 
     @staticmethod
     def problem_statement_input() -> str:
