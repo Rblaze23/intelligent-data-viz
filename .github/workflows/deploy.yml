@@ -1,13 +1,17 @@
 name: Deploy to Hugging Face
 
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
+# Disabled - deploying manually via git push to HF Space remote
+# Re-enable by uncommenting 'on:' section below
+
+# on:
+#   push:
+#     branches: [ main ]
+#   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    if: false  # Disabled - using manual git push deployment
 
     steps:
     - uses: actions/checkout@v4
