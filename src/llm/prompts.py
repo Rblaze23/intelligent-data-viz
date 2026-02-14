@@ -140,6 +140,139 @@ Return 3 visualizations. JSON only, no markdown."""
 
 Respond ONLY with valid JSON, no markdown code blocks, no additional text."""
 
+    @staticmethod
+    def bi_scaffold_step1_data_understanding(
+        problem: str,
+        column_info: Dict[str, str],
+        sample_data: str,
+        data_shape: tuple
+    ) -> str:
+        """Step 1 of BI scaffolded analysis: Data & problem understanding.
+
+        Args:
+            problem: User's problem statement
+            column_info: Dictionary of column names to data types
+            sample_data: Sample rows from the dataset
+            data_shape: Tuple of (rows, cols)
+
+        Returns:
+            Formatted prompt for Step 1
+        """
+        columns_str = ", ".join([f"{col}({dtype})" for col, dtype in column_info.items()])
+
+        return f"""You are a senior BI analyst. Perform Step 1: Data & Problem Understanding.
+
+PROBLEM: {problem}
+DATASET: {data_shape[0]} rows × {data_shape[1]} columns
+COLUMNS: {columns_str}
+
+SAMPLE DATA:
+{sample_data[:500]}
+
+Provide a structured analysis covering:
+1. **Business Context**: What business domain does this data represent? What decisions could it inform?
+2. **Key Hypotheses**: What are 3-5 testable hypotheses based on the problem and data?
+3. **Key Metrics**: Which columns are the most important KPIs? What aggregations matter?
+4. **Data Quality Notes**: Any concerns about missing values, outliers, or data types?
+5. **Segmentation Opportunities**: What natural groupings exist in the data?
+
+Be specific and reference actual column names. Output plain text (no JSON)."""
+
+    @staticmethod
+    def bi_scaffold_step2_figure_interpretation(
+        step1_context: str,
+        figure_descriptions: str
+    ) -> str:
+        """Step 2 of BI scaffolded analysis: Figure interpretation.
+
+        Args:
+            step1_context: Output from Step 1
+            figure_descriptions: Text descriptions of the generated figures
+
+        Returns:
+            Formatted prompt for Step 2
+        """
+        return f"""You are a senior BI analyst. Perform Step 2: Figure Interpretation.
+
+CONTEXT FROM STEP 1:
+{step1_context}
+
+GENERATED FIGURES:
+{figure_descriptions}
+
+Based on the business context from Step 1 and the figures above, provide:
+1. **Performance Insights**: What do the figures reveal about overall performance?
+2. **Segment Analysis**: How do different segments/categories compare?
+3. **Trend Observations**: Any temporal patterns or directional trends?
+4. **Distribution Findings**: What do distributions tell us about the data?
+5. **Correlation Discoveries**: Any notable relationships between variables?
+6. **Anomalies Detected**: Any outliers, unexpected patterns, or data points that stand out?
+
+Reference specific figures and data points. Output plain text (no JSON)."""
+
+    @staticmethod
+    def bi_scaffold_step3_synthesis(
+        step1_context: str,
+        step2_context: str
+    ) -> str:
+        """Step 3 of BI scaffolded analysis: Executive synthesis.
+
+        Args:
+            step1_context: Output from Step 1
+            step2_context: Output from Step 2
+
+        Returns:
+            Formatted prompt for Step 3
+        """
+        return f"""You are a senior BI analyst writing an executive report. Perform Step 3: Executive Synthesis.
+
+DATA UNDERSTANDING (Step 1):
+{step1_context}
+
+FIGURE INTERPRETATION (Step 2):
+{step2_context}
+
+Synthesize all findings into a professional executive report with these sections:
+1. **Executive Summary**: 3-4 sentence high-level overview of the most important findings
+2. **Key Findings**: Top 5 data-driven findings with supporting evidence
+3. **Trend Analysis**: Summary of trends, patterns, and their business implications
+4. **Performance Insights**: How key metrics are performing against expectations
+5. **Segment Analysis**: Performance breakdown by relevant categories/segments
+6. **Anomalies & Alerts**: Any concerning patterns, outliers, or risks detected
+7. **Risk Factors**: Business risks revealed by the data analysis
+8. **Recommendations**: 3-5 specific, actionable recommendations ranked by impact
+9. **Optimization Opportunities**: Areas where performance could be improved
+10. **Next Steps**: Concrete follow-up analyses or actions to take
+
+Write in professional business language. Be specific and data-driven. Output plain text (no JSON)."""
+
+    @staticmethod
+    def bi_analysis_prompt(
+        problem: str,
+        column_info: Dict[str, str],
+        sample_data: str,
+        data_shape: tuple,
+        figure_descriptions: str
+    ) -> str:
+        """Deprecated: Single-shot BI analysis prompt. Use the 3-step scaffold instead.
+
+        This is kept for backward compatibility but the scaffolded approach
+        (step1 → step2 → step3) produces significantly richer analysis.
+        """
+        columns_str = ", ".join([f"{col}({dtype})" for col, dtype in column_info.items()])
+        return f"""You are a senior BI analyst. Analyze this data and figures.
+
+PROBLEM: {problem}
+DATASET: {data_shape[0]} rows × {data_shape[1]} columns
+COLUMNS: {columns_str}
+SAMPLE: {sample_data[:300]}
+
+FIGURES:
+{figure_descriptions}
+
+Provide executive summary, key findings, recommendations, and next steps.
+Output plain text."""
+
 
 # Quick test to compare token usage
 if __name__ == "__main__":

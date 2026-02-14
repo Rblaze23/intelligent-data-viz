@@ -266,6 +266,86 @@ class UIComponents:
                 st.write("No specific recommendations at this time")
 
     @staticmethod
+    def display_insights(analysis_text: str):
+        """Render the full BI analysis report with structured sections.
+
+        Parses the analysis text and displays it in organized expandable sections
+        covering: executive summary, key findings, trend analysis, performance insights,
+        segment analysis, anomalies & alerts, risk factors, recommendations,
+        optimization opportunities, next steps, and a data context section.
+
+        Args:
+            analysis_text: Full BI analysis text from the 3-step scaffolded LLM
+        """
+        st.subheader("🧠 BI Analyst Report")
+
+        # Define sections and their icons
+        sections = [
+            ("Executive Summary", "📋"),
+            ("Key Findings", "🔑"),
+            ("Trend Analysis", "📈"),
+            ("Performance Insights", "⚡"),
+            ("Segment Analysis", "🔍"),
+            ("Anomalies & Alerts", "⚠️"),
+            ("Risk Factors", "🚨"),
+            ("Recommendations", "🎯"),
+            ("Optimization Opportunities", "💡"),
+            ("Next Steps", "🚀"),
+        ]
+
+        # Try to split the analysis into sections
+        remaining_text = analysis_text
+        found_sections = {}
+
+        for i, (section_name, _icon) in enumerate(sections):
+            # Search for section header patterns (e.g., "**Executive Summary**:", "## Executive Summary", "1. Executive Summary")
+            import re
+            patterns = [
+                rf'\*\*{re.escape(section_name)}\*\*[:\s]*',
+                rf'##\s*{re.escape(section_name)}[:\s]*',
+                rf'\d+\.\s*\*?\*?{re.escape(section_name)}\*?\*?[:\s]*',
+                rf'{re.escape(section_name)}[:\s]*',
+            ]
+
+            for pattern in patterns:
+                match = re.search(pattern, remaining_text, re.IGNORECASE)
+                if match:
+                    start = match.end()
+                    # Find the next section start
+                    next_start = len(remaining_text)
+                    for j in range(i + 1, len(sections)):
+                        next_name = sections[j][0]
+                        for np in [
+                            rf'\*\*{re.escape(next_name)}\*\*',
+                            rf'##\s*{re.escape(next_name)}',
+                            rf'\d+\.\s*\*?\*?{re.escape(next_name)}\*?\*?',
+                        ]:
+                            nm = re.search(np, remaining_text[start:], re.IGNORECASE)
+                            if nm:
+                                next_start = min(next_start, start + nm.start())
+                    found_sections[section_name] = remaining_text[start:next_start].strip()
+                    break
+
+        if found_sections:
+            # Render each found section
+            for section_name, icon in sections:
+                if section_name in found_sections and found_sections[section_name]:
+                    with st.expander(f"{icon} {section_name}", expanded=(section_name == "Executive Summary")):
+                        st.markdown(found_sections[section_name])
+        else:
+            # Fallback: show the full text
+            st.markdown(analysis_text)
+
+        # Data context section
+        with st.expander("📊 Data Context", expanded=False):
+            st.markdown("This analysis was generated using a 3-step scaffolded approach:")
+            st.markdown("""
+1. **Step 1 — Data Understanding**: Business context, hypotheses, key metrics
+2. **Step 2 — Figure Interpretation**: Performance insights, segment analysis, figure-level findings
+3. **Step 3 — Executive Synthesis**: Executive summary, recommendations, risk factors, next steps
+""")
+
+    @staticmethod
     def sidebar_info():
         """Display professional sidebar information."""
         with st.sidebar:

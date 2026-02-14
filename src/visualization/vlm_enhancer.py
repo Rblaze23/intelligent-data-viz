@@ -763,7 +763,8 @@ VERIFIED TEXT REPRESENTATION:
         problem_statement: str,
         data: pd.DataFrame,
         visualizations: list,
-        viz_specs: list
+        viz_specs: list,
+        selected_idx: int = 0
     ) -> Dict[str, Any]:
         """
         Generate a comprehensive dashboard specification based on visualizations and analysis.
@@ -779,7 +780,7 @@ VERIFIED TEXT REPRESENTATION:
         """
         if not self.initialized:
             logger.warning("VLM not initialized - generating basic dashboard spec")
-            return self._generate_basic_dashboard_spec(problem_statement, data, viz_specs)
+            return self._generate_basic_dashboard_spec(problem_statement, data, viz_specs, selected_idx)
         
         try:
             logger.info("Generating dashboard specification with VLM...")
@@ -836,24 +837,25 @@ Provide comprehensive, actionable dashboard design that tells a story with the d
                     if dashboard_spec and isinstance(dashboard_spec[0], dict):
                         dashboard_spec = dashboard_spec[0]
                     else:
-                        return self._generate_basic_dashboard_spec(problem_statement, data, viz_specs)
+                        return self._generate_basic_dashboard_spec(problem_statement, data, viz_specs, selected_idx)
                 
                 logger.info("Dashboard specification generated successfully")
                 return dashboard_spec
                 
             except json.JSONDecodeError as e:
                 logger.warning(f"Could not parse dashboard spec as JSON: {str(e)}, generating basic spec")
-                return self._generate_basic_dashboard_spec(problem_statement, data, viz_specs)
+                return self._generate_basic_dashboard_spec(problem_statement, data, viz_specs, selected_idx)
         
         except Exception as e:
             logger.error(f"Error generating dashboard spec: {str(e)}")
-            return self._generate_basic_dashboard_spec(problem_statement, data, viz_specs)
+            return self._generate_basic_dashboard_spec(problem_statement, data, viz_specs, selected_idx)
     
     def _generate_basic_dashboard_spec(
         self,
         problem_statement: str,
         data: pd.DataFrame,
-        viz_specs: list
+        viz_specs: list,
+        selected_idx: int = 0
     ) -> Dict[str, Any]:
         """Generate a basic dashboard specification without VLM."""
         numeric_cols = data.select_dtypes(include=['number']).columns.tolist()

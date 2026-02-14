@@ -39,6 +39,7 @@ from visualization.styler import Styler
 from visualization.exporter import VisualizationExporter
 from visualization.vlm_enhancer import GroqVLMEnhancer
 from llm.analyzer import VisualizationAnalyzer
+from llm.prompts import PromptTemplates
 from ui.components import UIComponents
 from utils.logger import get_logger
 from utils.exceptions import VisualizationError, VLMError
@@ -641,6 +642,7 @@ def generate_dashboard(
     vlm_enhancer: GroqVLMEnhancer,
     figures: list,
     viz_specs: list,
+    selected_idx: int = 0,
 ) -> Dict[str, Any]:
     """
     Generate a comprehensive dashboard specification using VLM.
@@ -651,6 +653,7 @@ def generate_dashboard(
         vlm_enhancer: VLM enhancer instance
         figures: List of Plotly figures
         viz_specs: List of visualization specifications
+        selected_idx: Index of the user's selected visualization
 
     Returns:
         Dashboard specification dictionary
@@ -658,7 +661,7 @@ def generate_dashboard(
     try:
         logger.info("Generating dashboard specification...")
         dashboard_spec = vlm_enhancer.generate_dashboard_spec(
-            problem_statement, data, figures, viz_specs
+            problem_statement, data, figures, viz_specs, selected_idx
         )
         logger.info("Dashboard specification generated successfully")
         return dashboard_spec
@@ -666,8 +669,73 @@ def generate_dashboard(
         logger.error(f"Error generating dashboard: {str(e)}")
         # Return basic dashboard spec on error
         return vlm_enhancer._generate_basic_dashboard_spec(
-            problem_statement, data, viz_specs
+            problem_statement, data, viz_specs, selected_idx
         )
+
+
+def generate_bi_analysis(
+    problem_statement: str,
+    data: pd.DataFrame,
+    viz_specs: list,
+    figures: list,
+    llm_client,
+) -> str:
+    """
+    Generate a professional BI analysis using 3-step scaffolded LLM prompting.
+
+    Each step builds on the previous one to produce a rich executive-level report:
+      Step 1: Data & problem understanding
+      Step 2: Figure interpretation (receives Step 1 context)
+      Step 3: Executive synthesis (receives Steps 1 + 2)
+
+    Args:
+        problem_statement: User's problem statement
+        data: DataFrame being analyzed
+        viz_specs: List of visualization specifications
+        figures: List of Plotly figures
+        llm_client: LLMClient instance for making API calls
+
+    Returns:
+        Full BI analysis text
+    """
+    prompts = PromptTemplates()
+
+    # Prepare data info
+    column_info = {col: str(data[col].dtype) for col in data.columns}
+    sample_data = data.head(3).to_string()
+    data_shape = data.shape
+
+    # Build figure descriptions from viz specs
+    figure_descriptions = "\n".join(
+        [
+            f"Figure {i+1}: {spec.get('title', 'Untitled')} "
+            f"({spec.get('type', 'unknown')} chart, "
+            f"x={spec.get('x_col', 'N/A')}, y={spec.get('y_col', 'N/A')})"
+            for i, spec in enumerate(viz_specs)
+        ]
+    )
+
+    # Step 1: Data & problem understanding
+    logger.info("BI Analysis Step 1/3: Data understanding...")
+    step1_prompt = prompts.bi_scaffold_step1_data_understanding(
+        problem_statement, column_info, sample_data, data_shape
+    )
+    step1_result = llm_client.generate_completion(step1_prompt, temperature=0.4, max_tokens=1500)
+
+    # Step 2: Figure interpretation (receives Step 1 context)
+    logger.info("BI Analysis Step 2/3: Figure interpretation...")
+    step2_prompt = prompts.bi_scaffold_step2_figure_interpretation(
+        step1_result, figure_descriptions
+    )
+    step2_result = llm_client.generate_completion(step2_prompt, temperature=0.4, max_tokens=1500)
+
+    # Step 3: Executive synthesis (receives Steps 1 + 2)
+    logger.info("BI Analysis Step 3/3: Executive synthesis...")
+    step3_prompt = prompts.bi_scaffold_step3_synthesis(step1_result, step2_result)
+    step3_result = llm_client.generate_completion(step3_prompt, temperature=0.3, max_tokens=2000)
+
+    logger.info("BI Analysis complete — 3 steps synthesized")
+    return step3_result
 
 
 # Session state initialization
@@ -689,6 +757,8 @@ def init_session_state():
         st.session_state.export_paths = {}
     if "dashboard_spec" not in st.session_state:
         st.session_state.dashboard_spec = None
+    if "bi_analysis" not in st.session_state:
+        st.session_state.bi_analysis = None
 
 
 @st.cache_resource
@@ -896,6 +966,7 @@ def main():
                                         vlm_enhancer,
                                         st.session_state.visualizations,
                                         st.session_state.viz_specs,
+                                        selected_idx,
                                     )
 
                                     st.session_state.dashboard_spec = dashboard_spec
@@ -911,7 +982,7 @@ def main():
 
                         # Display dashboard specification if available
                         if st.session_state.get("dashboard_spec"):
-                            st.header("� Visual Dashboard")
+                            st.header("📋 Visual Dashboard")
 
                             dashboard = st.session_state.dashboard_spec
 
@@ -927,7 +998,38 @@ def main():
                                 )
                                 st.write(dashboard.get("dashboard_description", ""))
 
-                                # Generate visual dashboard components
+                                # --- Real Plotly Figures: Primary + Supporting ---
+                                if st.session_state.visualizations:
+                                    all_figs = st.session_state.visualizations
+                                    all_specs = st.session_state.get("viz_specs", [])
+
+                                    # Primary visualization (user-selected)
+                                    primary_idx = min(selected_idx, len(all_figs) - 1)
+                                    st.subheader(f"📌 Primary: {all_specs[primary_idx].get('title', 'Selected Visualization') if primary_idx < len(all_specs) else 'Selected Visualization'}")
+                                    st.plotly_chart(
+                                        all_figs[primary_idx],
+                                        use_container_width=True,
+                                        key=f"dash_primary_{primary_idx}",
+                                    )
+
+                                    # Supporting visualizations (side-by-side)
+                                    support_figs = [
+                                        (i, fig) for i, fig in enumerate(all_figs) if i != primary_idx
+                                    ]
+                                    if support_figs:
+                                        st.subheader("📊 Supporting Visualizations")
+                                        cols = st.columns(len(support_figs))
+                                        for col, (idx, fig) in zip(cols, support_figs):
+                                            with col:
+                                                title = all_specs[idx].get("title", f"Option {idx+1}") if idx < len(all_specs) else f"Option {idx+1}"
+                                                st.markdown(f"**{title}**")
+                                                st.plotly_chart(
+                                                    fig,
+                                                    use_container_width=True,
+                                                    key=f"dash_support_{idx}",
+                                                )
+
+                                # Generate visual dashboard components (KPIs, metrics, etc.)
                                 try:
                                     dashboard_visuals = generate_dashboard_visuals(
                                         dashboard, st.session_state.data
@@ -939,6 +1041,7 @@ def main():
                                         st.plotly_chart(
                                             dashboard_visuals["kpi_summary"],
                                             use_container_width=True,
+                                            key="dash_kpi_summary",
                                         )
 
                                     # Display Business Metrics
@@ -947,6 +1050,7 @@ def main():
                                         st.plotly_chart(
                                             dashboard_visuals["business_metrics"],
                                             use_container_width=True,
+                                            key="dash_business_metrics",
                                         )
 
                                     # Display Dashboard Specifications
@@ -955,6 +1059,7 @@ def main():
                                         st.plotly_chart(
                                             dashboard_visuals["specifications"],
                                             use_container_width=True,
+                                            key="dash_specifications",
                                         )
 
                                     # Display Filters
@@ -963,6 +1068,7 @@ def main():
                                         st.plotly_chart(
                                             dashboard_visuals["filters"],
                                             use_container_width=True,
+                                            key="dash_filters",
                                         )
 
                                     # Display Insights
@@ -971,6 +1077,7 @@ def main():
                                         st.plotly_chart(
                                             dashboard_visuals["insights"],
                                             use_container_width=True,
+                                            key="dash_insights",
                                         )
 
                                 except Exception as e:
@@ -981,8 +1088,45 @@ def main():
                                         f"Could not generate visual dashboard: {str(e)}"
                                     )
 
-                        # Step 5: Export
-                        st.header("Step 5️⃣ Export Results")
+                        # Step 5: BI Analysis
+                        st.header("Step 5️⃣ BI Analysis")
+
+                        if st.button(
+                            "🧠 Generate BI Analysis",
+                            key="generate_bi_analysis",
+                        ):
+                            with st.spinner(
+                                "Generating BI analysis (3-step scaffolded LLM)..."
+                            ):
+                                try:
+                                    components = get_components()
+                                    analyzer = components["analyzer"]
+
+                                    bi_result = generate_bi_analysis(
+                                        st.session_state.problem_statement,
+                                        st.session_state.data,
+                                        st.session_state.viz_specs,
+                                        st.session_state.visualizations,
+                                        analyzer.llm,
+                                    )
+
+                                    st.session_state.bi_analysis = bi_result
+                                    st.success("✅ BI Analysis generated!")
+
+                                except Exception as e:
+                                    UIComponents.error_message(
+                                        f"BI Analysis failed: {str(e)}"
+                                    )
+                                    logger.error(
+                                        f"BI Analysis error: {str(e)}"
+                                    )
+
+                        # Display BI analysis if available
+                        if st.session_state.get("bi_analysis"):
+                            UIComponents.display_insights(st.session_state.bi_analysis)
+
+                        # Step 6: Export
+                        st.header("Step 6️⃣ Export Results")
 
                         components = get_components()
                         exporter = components["exporter"]
